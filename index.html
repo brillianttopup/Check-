@@ -13,7 +13,7 @@
         }
 
         body {
-            background-color: #f4f4f4;
+            background: linear-gradient(to right, #00bcd4, #00796b);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -78,7 +78,7 @@
             background-color: #004d40;
         }
 
-        .sim-form {
+        .sim-form, .payment-verification {
             display: none;
             background-color: #e0f7fa;
             padding: 15px;
@@ -88,23 +88,23 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .sim-form h3 {
+        .sim-form h3, .payment-verification h3 {
             color: #00796b;
             margin-bottom: 8px;
             font-size: 18px;
         }
 
-        .sim-form input[type="text"] {
+        .sim-form input[type="text"], .payment-verification input[type="text"] {
             width: 100%;
-            padding: 10px; /* উচ্চতা কিছুটা বাড়ানো হয়েছে */
+            padding: 10px;
             margin-bottom: 8px;
             border: 1px solid #00796b;
             border-radius: 5px;
-            font-size: 16px; /* ফন্ট সাইজও সামান্য বড় করা হয়েছে */
+            font-size: 16px;
             outline: none;
         }
 
-        .sim-form button {
+        .sim-form button, .payment-verification button {
             padding: 8px 12px;
             border-radius: 5px;
             cursor: pointer;
@@ -112,15 +112,28 @@
             font-size: 14px;
         }
 
-        .submit-button {
+        .submit-button, .verify-button {
             background-color: orange;
             color: #ffffff;
         }
 
-        .back-button {
-            background-color: red;
+        .home-button {
+            background-color: #00796b;
             color: #ffffff;
             margin-left: 10px;
+        }
+
+        .info-text {
+            font-size: 14px;
+            color: #00796b;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 14px;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -131,17 +144,17 @@
             <div class="package-item">
                 <img src="https://i.ibb.co/ZBhLnn3/bangladeshi-taka-logo-grameenphone-robi-axiata-limited-sim-cards-983b3d0eea08386c4cdb768435558a20.png" alt="Logo">
                 <span>10 GB 30-day</span>
-                <button class="buy-button" onclick="showSimForm()">Buy ৳170</button>
+                <button class="buy-button" onclick="showSimForm(170)">Buy ৳170</button>
             </div>
             <div class="package-item">
                 <img src="https://i.ibb.co/ZBhLnn3/bangladeshi-taka-logo-grameenphone-robi-axiata-limited-sim-cards-983b3d0eea08386c4cdb768435558a20.png" alt="Logo">
                 <span>15 GB 30-day</span>
-                <button class="buy-button" onclick="showSimForm()">Buy ৳264</button>
+                <button class="buy-button" onclick="showSimForm(264)">Buy ৳264</button>
             </div>
             <div class="package-item">
                 <img src="https://i.ibb.co/ZBhLnn3/bangladeshi-taka-logo-grameenphone-robi-axiata-limited-sim-cards-983b3d0eea08386c4cdb768435558a20.png" alt="Logo">
                 <span>20 GB 30-day</span>
-                <button class="buy-button" onclick="showSimForm()">Buy ৳320</button>
+                <button class="buy-button" onclick="showSimForm(320)">Buy ৳320</button>
             </div>
         </div>
     </div>
@@ -149,25 +162,66 @@
     <!-- Sim registration form -->
     <div class="sim-form" id="simForm">
         <h3>রেজিস্টার করা সিম নাম্বার দিন</h3>
-        <input type="text" placeholder="রেজিস্ট্রেশন করা সিম নাম্বার লিখুন">
+        <input type="text" placeholder="রেজিস্ট্রেশন করা সিম নাম্বার লিখুন" id="simNumber">
         <button class="submit-button" onclick="submitSim()">Submit</button>
-        <button class="back-button" onclick="hideSimForm()">Back</button>
+        <button class="home-button" onclick="goHome()">Home</button>
+    </div>
+
+    <!-- Payment Verification Form -->
+    <div class="payment-verification" id="paymentVerificationForm">
+        <h3>ট্রানজেকশন আইডি দিন</h3>
+        <input type="text" id="transactionId" placeholder="ট্রানজেকশন আইডি দিন">
+        
+        <div class="info-text">
+            <p><strong>আপনার মোট পরিমাণ:</strong> <span id="amountText">0</span> BDT</p>
+            <p>• কোড ডায়াল করে বা এপ্স থেকে সেন্ডমানি করতে হবে।</p>
+            <p>• টাকা পাঠিয়ে উপরের বক্সে ট্রানজেকশন আইডি দিয়ে Verify এ ক্লিক করুন।</p>
+            <p>• শুধু মাত্র বিকাশ/নগদ/রকেট এ টাকা পাঠাতে পারবেন।</p>
+            <p><strong>Nagad/Bkash:</strong> 01749029532</p>
+        </div>
+
+        <button class="verify-button" onclick="verifyTransaction()">Verify</button>
+        <button class="home-button" onclick="goHome()">Home</button>
+
+        <div id="errorMessage" class="error-message"></div>
     </div>
 
     <script>
-        function showSimForm() {
-            document.getElementById("packageContainer").style.display = "none";
-            document.getElementById("simForm").style.display = "block";
-        }
+        var selectedAmount = 0;
 
-        function hideSimForm() {
-            document.getElementById("packageContainer").style.display = "block";
-            document.getElementById("simForm").style.display = "none";
+        function showSimForm(amount) {
+            selectedAmount = amount;  // Store the selected package amount
+            document.getElementById("packageContainer").style.display = "none";  // Hide packages
+            document.getElementById("simForm").style.display = "block";  // Show sim form
         }
 
         function submitSim() {
-            alert("সিম নাম্বার সাবমিট হয়েছে!");
-            hideSimForm();
+            var simNumber = document.getElementById("simNumber").value;
+            if (simNumber === "") {
+                alert("দয়া করে সিম নাম্বার দিন!");
+            } else {
+                alert("সিম নাম্বার সফলভাবে সাবমিট হয়েছে!");
+                document.getElementById("simForm").style.display = "none";  // Hide sim form
+                document.getElementById("paymentVerificationForm").style.display = "block";  // Show payment verification
+                document.getElementById("amountText").textContent = selectedAmount;  // Display selected amount
+            }
+        }
+
+        function verifyTransaction() {
+            var transactionId = document.getElementById("transactionId").value;
+            var errorMessageElement = document.getElementById("errorMessage");
+
+            if (transactionId === "") {
+                errorMessageElement.textContent = "ভুল ট্রানজেকশন আইডি! দয়া করে সঠিক আইডি দিন।";
+            } else {
+                errorMessageElement.textContent = "ভুল ট্রানজেকশন আইডি! দয়া করে সঠিক আইডি দিন।";
+            }
+        }
+
+        function goHome() {
+            document.getElementById("simForm").style.display = "none";  // Hide sim form
+            document.getElementById("paymentVerificationForm").style.display = "none";  // Hide payment verification
+            document.getElementById("packageContainer").style.display = "block";  // Show packages
         }
     </script>
 </body>
